@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grab First Frame</title>
+    <style>
+        #video-preview {
+            display: none;
+        }
+        #frame {
+            display: none;
+            border: 1px solid black;
+        }
+        #frame-image {
+            display: none;
+            border: 1px solid black;
+        }
+    </style>
+</head>
+<body>
+    <h1>Grab First Frame</h1>
+    <input type="file" id="media-input" accept="video/*,image/gif">
+    <video id="video-preview" controls></video>
+    <canvas id="frame"></canvas>
+    <img id="frame-image" alt="First Frame">
+    <div>
+        <label for="format-select">Download as:</label>
+        <select id="format-select">
+            <option value="png">PNG</option>
+            <option value="jpg">JPEG</option>
+            <!-- Add more options for other formats as needed -->
+        </select>
+        <button id="download-btn">Download</button>
+    </div>
+
+    <script>
+        const mediaInput = document.getElementById('media-input');
+        const videoPreview = document.getElementById('video-preview');
+        const canvas = document.getElementById('frame');
+        const frameImage = document.getElementById('frame-image');
+        const ctx = canvas.getContext('2d');
+        const downloadBtn = document.getElementById('download-btn');
+        const formatSelect = document.getElementById('format-select');
+
+        mediaInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const url = URL.createObjectURL(file);
+                if (file.type.startsWith('video/') || file.type === 'image/gif') {
+                    videoPreview.src = url;
+                    videoPreview.style.display = 'block';
+
+                    videoPreview.addEventListener('loadeddata', function() {
+                        videoPreview.currentTime = 0; // Ensure we start at the first frame
+                    });
+
+                    videoPreview.addEventListener('seeked', function() {
+                        // Set canvas size to match video or GIF
+                        canvas.width = videoPreview.videoWidth;
+                        canvas.height = videoPreview.videoHeight;
+
+                        // Draw the first frame
+                        ctx.drawImage(videoPreview, 0, 0, canvas.width, canvas.height);
+                        
+                        // Convert canvas to chosen image format
+                        const format = formatSelect.value;
+                        const dataURL = canvas.toDataURL(`image/${format}`);
+                        frameImage.src = dataURL;
+                        frameImage.style.display = 'block';
+                    }, { once: true });
+
+                    videoPreview.addEventListener('error', function() {
+                        alert('Error loading video or GIF.');
+                    });
+                } else {
+                    alert('Please select a valid video or GIF file.');
+                }
+            } else {
+                alert('Please select a file.');
+            }
+        });
+
+        downloadBtn.addEventListener('click', function() {
+            const format = formatSelect.value;
+            if (format === 'png' || format === 'jpg') {
+                const dataURL = canvas.toDataURL(`image/${format}`);
+                const link = document.createElement('a');
+                link.href = dataURL;
+                link.download = `first-frame.${format}`;
+                link.click();
+            } else {
+                alert('Unsupported format.');
+            }
+        });
+    </script>
+</body>
+</html>
